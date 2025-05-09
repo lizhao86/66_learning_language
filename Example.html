@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赵66英语 - 儿童英语学习</title>
+    <link href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-100-M/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-100-M/marked/4.0.2/marked.min.js"></script>
+    <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/alpinejs/3.9.0/cdn.min.js" defer></script>
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+        }
+        .font-serif { font-family: 'Noto Serif SC', serif; }
+        .smooth-transition { transition: all 0.3s ease-in-out; }
+        .module-fade-enter-active, .module-fade-leave-active { transition: opacity 0.4s ease-in-out; }
+        .module-fade-enter-from, .module-fade-leave-to { opacity: 0; }
+
+        /* Flashcard 3D Flip */
+        .flashcard-container {
+            perspective: 1000px;
+            height: 480px; /* 增加高度 */
+        }
+        .flashcard {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.7s ease-in-out;
+            cursor: pointer;
+        }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden; /* Safari */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem; /* p-6 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+        }
+        .flashcard-front { background-color: white; }
+        .flashcard-back { background-color: #f0f9ff; /* sky-50 */ transform: rotateY(180deg); }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            height: 4px;
+            background-color: #e5e7eb; /* gray-200 */
+            border-radius: 2px;
+            overflow: hidden;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 40; /* Below header */
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #1f2937; /* gray-800 */
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* Reading Text Highlight */
+        .highlighted-word {
+            background-color: #fef9c3; /* yellow-100 */
+            cursor: pointer;
+            padding: 0 2px;
+            border-radius: 2px;
+            transition: background-color 0.2s ease;
+        }
+        .highlighted-word:hover { background-color: #fde047; /* yellow-400 */ }
+
+        /* Quiz Feedback */
+        .option-button.correct { background-color: #dcfce7; /* green-100 */ border-color: #22c55e; /* green-500 */ color: #166534; /* green-800 */ }
+        .option-button.incorrect { background-color: #fee2e2; /* red-100 */ border-color: #ef4444; /* red-500 */ color: #991b1b; /* red-800 */ }
+        .option-button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* Poster Modal */
+        .poster-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+        .poster-content {
+            width: 90%;
+            max-width: 400px;
+            aspect-ratio: 9 / 16;
+            background-color: white;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem;
+        }
+
+        @keyframes posterFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes floatAnimation {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        .poster-header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .poster-header h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .poster-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+        }
+
+        .poster-words {
+            margin-bottom: 1rem;
+        }
+
+        .poster-words h3 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .word-card {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+
+        .word-text {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.125rem;
+        }
+
+        .word-phonetic {
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .word-definition {
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .poster-footer {
+            margin-top: auto;
+            text-align: center;
+            padding-bottom: 0.5rem; /* 确保底部有足够空间 */
+        }
+
+        .poster-quote {
+            font-size: 0.75rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* 限制为3行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            max-height: 3.6em; /* 约等于3行的高度 */
+        }
+
+        .poster-branding {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            padding: 0.25rem 0;
+        }
+
+        /* 大胆现代风格 */
+        .poster-bold-modern {
+            background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+            color: #fff;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .poster-bold-modern::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                rgba(255, 0, 128, 0.1) 0%,
+                rgba(255, 255, 0, 0.1) 100%);
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        .poster-bold-modern .poster-header {
+            margin-bottom: 2rem;
+        }
+
+        .poster-bold-modern .poster-header h2 {
+            font-size: 3.75rem;
+            font-weight: 900;
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #ff0080, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transform: skew(-5deg);
+        }
+
+        .poster-bold-modern .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transform: skew(-5deg);
+        }
+
+        .poster-bold-modern .stat-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #ff0080;
+        }
+
+        .poster-bold-modern .word-card {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 4px solid #ff0080;
+            padding: 0.5rem; /* 减小内边距 */
+            margin-bottom: 0.5rem; /* 减小外边距 */
+            transform: translateX(-0.5rem); /* 减小偏移 */
+            position: relative;
+        }
+
+        .poster-bold-modern .word-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255, 0, 128, 0.1),
+                transparent);
+            pointer-events: none;
+        }
+
+        .poster-bold-modern .word-text {
+            font-size: 0.875rem; /* 减小字体大小 */
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #fff;
+            margin-bottom: 0.125rem;
+        }
+
+        .poster-bold-modern .word-phonetic {
+            font-size: 0.625rem; /* 减小字体大小 */
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.125rem;
+        }
+
+        .poster-bold-modern .word-definition {
+            font-size: 0.625rem; /* 减小字体大小 */
+            line-height: 1.2;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* 赛博朋克风格 */
+        .poster-cyberpunk {
+            background: #000020;
+            color: #0ff;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .poster-cyberpunk::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(90deg, 
+                    rgba(0, 255, 255, 0.1) 1px, 
+                    transparent 1px
+                ),
+                linear-gradient(
+                    rgba(0, 255, 255, 0.1) 1px,
+                    transparent 1px
+                );
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .poster-cyberpunk .poster-header {
+            position: relative;
+            z-index: 1;
+        }
+
+        .poster-cyberpunk .poster-header h2 {
+            font-family: 'Courier New', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #0ff;
+            text-shadow: 
+                2px 2px 0px #f0f,
+                -2px -2px 0px #0ff;
+            margin-bottom: 1rem;
+        }
+
+        .poster-cyberpunk .stat-card {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid #0ff;
+            box-shadow: 
+                0 0 10px rgba(0, 255, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .poster-cyberpunk .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(45deg, 
+                transparent 0%,
+                rgba(0, 255, 255, 0.2) 50%,
+                transparent 100%);
+            z-index: -1;
+        }
+
+        .poster-cyberpunk .word-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0ff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .poster-cyberpunk .word-text {
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+        }
+
+        .poster-cyberpunk .word-phonetic {
+            color: #0ff;
+            font-style: italic;
+        }
+
+        .poster-cyberpunk .word-definition {
+            color: #0fc;
+            font-size: 0.875rem;
+        }
+
+        /* 优雅复古风格 */
+        .poster-elegant-vintage {
+            background: #f8f3e3;
+            color: #2c1810;
+            padding: 1.5rem;
+            position: relative;
+            border: 8px double #8b4513;
+        }
+
+        .poster-elegant-vintage::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at center, rgba(139, 69, 19, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at center, rgba(139, 69, 19, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .poster-elegant-vintage .poster-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #8b4513;
+            position: relative;
+        }
+
+        .poster-elegant-vintage .poster-header::before,
+        .poster-elegant-vintage .poster-header::after {
+            content: '•';
+            position: absolute;
+            bottom: -0.5rem;
+            font-size: 1rem;
+            color: #8b4513;
+            background: #f8f3e3;
+            padding: 0 0.5rem;
+        }
+
+        .poster-elegant-vintage .poster-header::before {
+            left: 45%;
+        }
+
+        .poster-elegant-vintage .poster-header::after {
+            right: 45%;
+        }
+
+        .poster-elegant-vintage .poster-header h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 2rem;
+            color: #8b4513;
+            letter-spacing: 0.1em;
+            text-shadow: 1px 1px 0 #f8f3e3;
+        }
+
+        .poster-elegant-vintage .stat-card {
+            background: #fff;
+            border: 1px solid #8b4513;
+            box-shadow: 3px 3px 0 #8b4513;
+            position: relative;
+        }
+
+        .poster-elegant-vintage .word-card {
+            background: #fff;
+            border: 1px solid #8b4513;
+            box-shadow: 2px 2px 0 #8b4513; /* 减小阴影 */
+            padding: 0.5rem; /* 减小内边距 */
+            margin-bottom: 0.5rem; /* 减小外边距 */
+            position: relative;
+        }
+
+        .poster-elegant-vintage .word-text {
+            font-family: 'Noto Serif SC', serif;
+            color: #2c1810;
+            font-size: 0.875rem; /* 减小字体大小 */
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+        }
+
+        .poster-elegant-vintage .word-phonetic {
+            font-style: italic;
+            color: #8b4513;
+            font-size: 0.625rem; /* 减小字体大小 */
+            margin-bottom: 0.125rem;
+        }
+
+        .poster-elegant-vintage .word-definition {
+            font-family: 'Noto Serif SC', serif;
+            color: #2c1810;
+            font-size: 0.625rem; /* 减小字体大小 */
+            line-height: 1.2;
+        }
+
+        /* 新未来主义风格 */
+        .poster-neo-futurism {
+            background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+            color: #1d1d1f;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .poster-neo-futurism::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(
+                    circle at 50% -20%,
+                    rgba(0, 122, 255, 0.1),
+                    transparent 70%
+                );
+            pointer-events: none;
+        }
+
+        .poster-neo-futurism .poster-header h2 {
+            font-weight: 300;
+            font-size: 2rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(90deg, #007aff, #5856d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem;
+            white-space: nowrap;
+            overflow: visible;
+        }
+
+        .poster-neo-futurism .stat-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.05),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        }
+
+        .poster-neo-futurism .word-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.05),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .poster-neo-futurism .word-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(0, 122, 255, 0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            pointer-events: none;
+        }
+
+        .poster-neo-futurism .word-text {
+            background: linear-gradient(90deg, #007aff, #5856d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 500;
+            font-size: 1.25rem;
+        }
+
+        .poster-neo-futurism .word-phonetic {
+            color: #86868b;
+        }
+
+        .poster-neo-futurism .word-definition {
+            color: #1d1d1f;
+            line-height: 1.6;
+        }
+
+        /* 移除赛博朋克动效 */
+        @keyframes cyberpunk-glitch {
+            0% { transform: none; text-shadow: none; }
+            100% { transform: none; text-shadow: none; }
+        }
+
+        @keyframes cyberpunk-scanlines {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 0; }
+        }
+
+        /* 阅读区域样式优化 */
+        .prose {
+            max-width: none;
+            font-size: 1.125rem;
+            line-height: 2; /* 增加行高 */
+            color: #1f2937;
+        }
+
+        .bilingual-pair .english {
+            color: #1f2937;
+            font-size: 1.125rem;
+            line-height: 2; /* 增加行高 */
+            margin-bottom: 0.5rem;
+        }
+
+        .bilingual-pair .chinese {
+            color: #374151;
+            font-size: 1.125rem;
+            line-height: 2; /* 增加行高 */
+            padding-left: 1rem;
+            border-left: 2px solid #e5e7eb;
+        }
+
+    </style>
+<meta name="code-type" content="html">
+</head>
+<body class="bg-gray-100" x-data="app()">
+
+    <!-- Top Navigation -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <div @click="currentModule = 'words'; currentWordIndex = 0; wordCardFlipped = false;" class="text-xl font-black text-gray-800 font-serif cursor-pointer hover:text-gray-900 transform hover:scale-105 transition-all duration-200">乔木英语</div>
+            <div class="hidden sm:flex ml-auto space-x-4">
+                <button @click="currentModule = 'words'" :class="{'text-gray-800 border-b-2 border-gray-800 font-semibold': currentModule === 'words', 'text-gray-500 hover:text-gray-700': currentModule !== 'words'}" class="py-2 px-1 smooth-transition">单词学习</button>
+                <button @click="currentModule = 'reading'" :class="{'text-gray-800 border-b-2 border-gray-800 font-semibold': currentModule === 'reading', 'text-gray-500 hover:text-gray-700': currentModule !== 'reading'}" class="py-2 px-1 smooth-transition">阅读学习</button>
+                <button @click="currentModule = 'quiz'" :class="{'text-gray-800 border-b-2 border-gray-800 font-semibold': currentModule === 'quiz', 'text-gray-500 hover:text-gray-700': currentModule !== 'quiz'}" class="py-2 px-1 smooth-transition">理解测试</button>
+                <button @click="currentModule = 'achievement'" :class="{'text-gray-800 border-b-2 border-gray-800 font-semibold': currentModule === 'achievement', 'text-gray-500 hover:text-gray-700': currentModule !== 'achievement'}" class="py-2 px-1 smooth-transition">学习成就</button>
+            </div>
+            <!-- Mobile Menu Button -->
+            <div class="sm:hidden">
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-600 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+         <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" class="sm:hidden absolute top-full left-0 right-0 bg-white shadow-lg py-2 z-40" x-transition>
+             <button @click="currentModule = 'words'; mobileMenuOpen = false" class="block w-full text-left px-4 py-2 text-sm" :class="{'text-gray-800 font-semibold': currentModule === 'words', 'text-gray-700': currentModule !== 'words'}">单词学习</button>
+             <button @click="currentModule = 'reading'; mobileMenuOpen = false" class="block w-full text-left px-4 py-2 text-sm" :class="{'text-gray-800 font-semibold': currentModule === 'reading', 'text-gray-700': currentModule !== 'reading'}">阅读学习</button>
+             <button @click="currentModule = 'quiz'; mobileMenuOpen = false" class="block w-full text-left px-4 py-2 text-sm" :class="{'text-gray-800 font-semibold': currentModule === 'quiz', 'text-gray-700': currentModule !== 'quiz'}">理解测试</button>
+             <button @click="currentModule = 'achievement'; mobileMenuOpen = false" class="block w-full text-left px-4 py-2 text-sm" :class="{'text-gray-800 font-semibold': currentModule === 'achievement', 'text-gray-700': currentModule !== 'achievement'}">学习成就</button>
+         </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8 pb-16"> <!-- Added padding-bottom for progress bar -->
+
+        <!-- Word Learning Module -->
+        <div x-show="currentModule === 'words'" x-transition:enter="module-fade-enter-active" x-transition:enter-start="module-fade-enter-from" x-transition:enter-end="module-fade-enter-to" x-transition:leave="module-fade-leave-active" x-transition:leave-start="module-fade-leave-from" x-transition:leave-end="module-fade-leave-to"
+             class="swipe-area"
+             @touchstart="handleTouchStart"
+             @touchmove="handleTouchMove"
+             @touchend="handleTouchEnd('words')">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800 text-center">单词学习</h2>
+            <div class="max-w-md mx-auto">
+                <div class="flashcard-container h-64 sm:h-72 mb-6">
+                    <div class="flashcard" :class="{ 'is-flipped': wordCardFlipped }" @click="wordCardFlipped = !wordCardFlipped">
+                        <!-- Front Face -->
+                        <div class="flashcard-face flashcard-front">
+                            <div class="text-4xl sm:text-5xl font-bold text-gray-900 mb-2" x-text="currentWordData.word"></div>
+                            <div class="text-lg text-gray-600" x-text="currentWordData.phonetic"></div>
+                        </div>
+                        <!-- Back Face -->
+                        <div class="flashcard-face flashcard-back">
+                            <div class="w-full h-full flex flex-col">
+                                <!-- 单词释义部分 -->
+                                <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                                    <h3 class="text-lg font-semibold text-blue-800 mb-2">释义</h3>
+                                    <p class="text-gray-800" x-text="currentWordData.definition"></p>
+                                </div>
+                                
+                                <!-- 词根解析部分 -->
+                                <template x-if="currentWordData.etymology">
+                                    <div class="mb-4 p-4 bg-purple-50 rounded-lg">
+                                        <h3 class="text-lg font-semibold text-purple-800 mb-2">词根解析</h3>
+                                        <p class="text-gray-800" x-text="currentWordData.etymology"></p>
+                                    </div>
+                                </template>
+                                
+                                <!-- 例句部分 -->
+                                <div class="p-4 bg-green-50 rounded-lg">
+                                    <h3 class="text-lg font-semibold text-green-800 mb-2">例句</h3>
+                                    <p class="text-gray-800 italic" x-text="currentWordData.sentence"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between items-center">
+                    <button @click="prevWord()" :disabled="currentWordIndex === 0" class="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed smooth-transition transform active:scale-95">
+                        <i class="fas fa-chevron-left mr-2"></i> 上一个
+                    </button>
+
+                    <span class="text-sm text-gray-500" x-text="`${currentWordIndex + 1} / ${words.length}`"></span>
+
+                    <template x-if="currentWordIndex < words.length - 1">
+                        <button @click="nextWord()" class="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed smooth-transition transform active:scale-95">
+                             下一个 <i class="fas fa-chevron-right ml-2"></i>
+                        </button>
+                    </template>
+                    <template x-if="currentWordIndex === words.length - 1">
+                        <button @click="currentModule = 'reading'" class="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 smooth-transition transform active:scale-95">
+                            开始阅读 <i class="fas fa-book-reader ml-2"></i>
+                        </button>
+                    </template>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+                 <div class="progress-bar" :style="`width: ${((currentWordIndex + 1) / words.length) * 100}%`"></div>
+            </div>
+        </div>
+
+        <!-- Reading Comprehension Module -->
+        <div x-show="currentModule === 'reading'" x-transition:enter="module-fade-enter-active" x-transition:enter-start="module-fade-enter-from" x-transition:enter-end="module-fade-enter-to" x-transition:leave="module-fade-leave-active" x-transition:leave-start="module-fade-leave-from" x-transition:leave-end="module-fade-leave-to">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 text-center">阅读学习</h2>
+
+            <!-- Reading Mode Selector -->
+            <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                <div class="flex justify-center space-x-4">
+                    <button @click="readingMode = 'english'" 
+                            :class="{'bg-gray-800 text-white': readingMode === 'english', 'bg-gray-100 text-gray-800': readingMode !== 'english'}"
+                            class="px-4 py-2 rounded-md transition-all duration-200 hover:bg-gray-900 hover:text-white">
+                        <i class="fas fa-language mr-2"></i>英文
+                    </button>
+                    <button @click="readingMode = 'chinese'"
+                            :class="{'bg-gray-800 text-white': readingMode === 'chinese', 'bg-gray-100 text-gray-800': readingMode !== 'chinese'}"
+                            class="px-4 py-2 rounded-md transition-all duration-200 hover:bg-gray-900 hover:text-white">
+                        <i class="fas fa-font mr-2"></i>中文
+                    </button>
+                    <button @click="readingMode = 'bilingual'"
+                            :class="{'bg-gray-800 text-white': readingMode === 'bilingual', 'bg-gray-100 text-gray-800': readingMode !== 'bilingual'}"
+                            class="px-4 py-2 rounded-md transition-all duration-200 hover:bg-gray-900 hover:text-white">
+                        <i class="fas fa-exchange-alt mr-2"></i>双语
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reading Area -->
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
+                <!-- Content Area -->
+                <div class="swipe-area"
+                     @touchstart="handleTouchStart"
+                     @touchmove="handleTouchMove"
+                     @touchend="handleTouchEnd('reading')">
+                    
+                    <!-- Single Language Mode -->
+                    <template x-if="readingMode !== 'bilingual'">
+                        <div class="prose max-w-none text-base sm:text-lg leading-relaxed text-gray-800"
+                             x-html="readingMode === 'english' ? formattedEnglishText : formattedChineseText"
+                             @click="handleWordClick($event)">
+                        </div>
+                    </template>
+
+                    <!-- Bilingual Mode -->
+                    <template x-if="readingMode === 'bilingual'">
+                        <div class="bilingual-text">
+                            <template x-for="(paragraph, index) in getBilingualParagraphs()" :key="index">
+                                <div class="bilingual-pair">
+                                    <div class="english" x-html="paragraph.english"></div>
+                                    <div class="chinese" x-html="paragraph.chinese"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 跳转按钮 -->
+            <div class="mt-8 text-center">
+                <button @click="currentModule = 'quiz'" 
+                        class="px-6 py-3 bg-gray-800 text-white rounded-md hover:bg-gray-900 smooth-transition transform active:scale-95 shadow-lg">
+                    <i class="fas fa-tasks mr-2"></i>已完成去测试
+                </button>
+            </div>
+        </div>
+
+        <!-- Learning Achievement Module -->
+        <div x-show="currentModule === 'achievement'" x-transition:enter="module-fade-enter-active" x-transition:enter-start="module-fade-enter-from" x-transition:enter-end="module-fade-enter-to" x-transition:leave="module-fade-leave-active" x-transition:leave-start="module-fade-leave-from" x-transition:leave-end="module-fade-leave-to">
+            <h2 class="text-2xl font-semibold mb-8 text-gray-800 text-center">学习成就</h2>
+            
+            <div class="max-w-2xl mx-auto">
+                <!-- 成就卡片 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <!-- 顶部信息区 -->
+                    <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6">
+                        <div class="text-center">
+                            <p class="text-lg opacity-90">学习日期</p>
+                            <p class="text-2xl font-bold mt-1" x-text="currentDate"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 统计数据区 -->
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <!-- 单词学习统计 -->
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <i class="fas fa-book text-2xl text-gray-800 mb-2"></i>
+                                <p class="text-sm text-gray-600">学习单词</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" x-text="words.length"></p>
+                            </div>
+                            
+                            <!-- 测验成绩统计 -->
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <i class="fas fa-star text-2xl text-gray-800 mb-2"></i>
+                                <p class="text-sm text-gray-600">测验得分</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-1">
+                                    <span x-text="quizScore"></span>
+                                    <span class="text-base font-normal text-gray-600">/ </span>
+                                    <span x-text="questions.length" class="text-base font-normal text-gray-600"></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 分享海报区 -->
+                        <div class="mt-8">
+                            <p class="text-center text-gray-600 mb-4">选择风格生成你的专属学习海报</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <button @click="showPoster('bold-modern')" 
+                                        class="py-2 px-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 smooth-transition transform hover:scale-105 active:scale-95 shadow-md">
+                                    <i class="fas fa-bold mb-1"></i>
+                                    <span class="block text-sm">大胆现代</span>
+                                </button>
+                                <button @click="showPoster('cyberpunk')" 
+                                        class="py-2 px-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 smooth-transition transform hover:scale-105 active:scale-95 shadow-md">
+                                    <i class="fas fa-robot mb-1"></i>
+                                    <span class="block text-sm">赛博朋克</span>
+                                </button>
+                                <button @click="showPoster('elegant-vintage')" 
+                                        class="py-2 px-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 smooth-transition transform hover:scale-105 active:scale-95 shadow-md">
+                                    <i class="fas fa-feather mb-1"></i>
+                                    <span class="block text-sm">优雅复古</span>
+                                </button>
+                                <button @click="showPoster('neo-futurism')" 
+                                        class="py-2 px-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 smooth-transition transform hover:scale-105 active:scale-95 shadow-md">
+                                    <i class="fas fa-cube mb-1"></i>
+                                    <span class="block text-sm">新未来主义</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poster Modal -->
+            <div x-show="posterVisible" class="poster-modal" @click="posterVisible = false" x-transition:enter="module-fade-enter-active" x-transition:leave="module-fade-leave-active">
+                <div class="poster-content" :class="'poster-' + selectedPosterStyle" @click.stop>
+                   <!-- Content dynamically inserted based on style -->
+                   <div :class="posterStyleClasses.container">
+                       <h2 :class="posterStyleClasses.title" x-text="posterData.title">Learning Report</h2>
+                       <p :class="posterStyleClasses.date" x-text="'Date: ' + currentDate"></p>
+                       <div :class="posterStyleClasses.stats">
+                           <p>Words Learned: <span x-text="words.length"></span></p>
+                           <p>Quiz Score: <span x-text="quizScore"></span> / <span x-text="questions.length"></span></p>
+                       </div>
+                       <p :class="posterStyleClasses.quote" x-text="posterData.quote"></p>
+                   </div>
+                   <p class="absolute bottom-4 right-4 text-xs opacity-70 font-serif">乔木英语</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加理解测试模块 -->
+        <div x-show="currentModule === 'quiz'" x-transition:enter="module-fade-enter-active" x-transition:enter-start="module-fade-enter-from" x-transition:enter-end="module-fade-enter-to" x-transition:leave="module-fade-leave-active" x-transition:leave-start="module-fade-leave-from" x-transition:leave-end="module-fade-leave-to">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800 text-center">理解测试</h2>
+            
+            <!-- 将原有的Quiz内容移动到这里 -->
+            <div x-show="!quizCompleted">
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                    <div class="mb-4">
+                        <p class="font-medium text-gray-800 mb-1" x-text="`问题 ${currentQuestionIndex + 1} / ${questions.length}:`"></p>
+                        <p class="text-lg text-gray-900" x-text="currentQuestionData.question"></p>
+                    </div>
+                    <div class="space-y-3 mb-4">
+                        <template x-for="(option, index) in currentQuestionData.options" :key="index">
+                            <button
+                                @click="selectAnswer(index)"
+                                :disabled="userAnswers[currentQuestionIndex] !== null"
+                                class="w-full text-left p-3 border rounded-md hover:bg-gray-50 smooth-transition option-button"
+                                :class="{
+                                    'correct': userAnswers[currentQuestionIndex] !== null && index === currentQuestionData.correctAnswer && userAnswers[currentQuestionIndex] === index,
+                                    'incorrect': userAnswers[currentQuestionIndex] !== null && index !== currentQuestionData.correctAnswer && userAnswers[currentQuestionIndex] === index,
+                                    'border-blue-500 bg-blue-50': userAnswers[currentQuestionIndex] !== null && index === currentQuestionData.correctAnswer,
+                                    'border-gray-300': userAnswers[currentQuestionIndex] === null || (userAnswers[currentQuestionIndex] !== null && index !== userAnswers[currentIndex] && index !== currentQuestionData.correctAnswer)
+                                }"
+                            >
+                                <span class="font-medium mr-2" x-text="String.fromCharCode(65 + index) + '.'"></span>
+                                <span x-text="option"></span>
+                                <template x-if="userAnswers[currentQuestionIndex] !== null && index === currentQuestionData.correctAnswer">
+                                    <i class="fas fa-check text-green-600 float-right"></i>
+                                </template>
+                                <template x-if="userAnswers[currentQuestionIndex] !== null && index === userAnswers[currentQuestionIndex] && index !== currentQuestionData.correctAnswer">
+                                    <i class="fas fa-times text-red-600 float-right"></i>
+                                </template>
+                            </button>
+                        </template>
+                    </div>
+                    <div x-show="userAnswers[currentQuestionIndex] !== null" class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-md" x-transition>
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-1">解析</h4>
+                                <p class="text-blue-900" x-text="currentQuestionData.explanation"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Navigation -->
+                    <div class="mt-6 text-right">
+                        <template x-if="currentQuestionIndex < questions.length - 1">
+                            <button
+                                @click="nextQuestion()"
+                                :disabled="userAnswers[currentQuestionIndex] === null"
+                                class="px-5 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed smooth-transition transform active:scale-95"
+                            >
+                                下一题 <i class="fas fa-chevron-right ml-1"></i>
+                            </button>
+                        </template>
+                        <template x-if="currentQuestionIndex === questions.length - 1">
+                            <button
+                                @click="finishQuiz()"
+                                :disabled="userAnswers[currentQuestionIndex] === null"
+                                class="px-5 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed smooth-transition transform active:scale-95"
+                            >
+                                完成测验 <i class="fas fa-check-circle ml-1"></i>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Results -->
+            <div x-show="quizCompleted" class="text-center bg-white p-6 rounded-lg shadow-md" x-transition>
+                <h3 class="text-2xl font-semibold mb-4 text-green-600">测验完成!</h3>
+                <p class="text-xl mb-2 text-gray-800">你的得分: <strong x-text="quizScore" class="text-blue-600"></strong> / <span x-text="questions.length"></span></p>
+                <p class="text-gray-600 mb-6" x-text="getQuizFeedback()"></p>
+                <div class="flex justify-center space-x-4">
+                    <button @click="retakeQuiz()" class="px-5 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 smooth-transition transform active:scale-95">
+                        <i class="fas fa-redo mr-1"></i> 重新测验
+                    </button>
+                    <button @click="currentModule = 'achievement'" class="px-5 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 smooth-transition transform active:scale-95">
+                        查看学习成就 <i class="fas fa-trophy ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function app() {
+            return {
+                // App State
+                currentModule: 'words',
+                readingMode: 'english', // 'english', 'chinese', 'bilingual'
+                currentDate: new Date().toLocaleDateString('zh-CN'),
+                mobileMenuOpen: false,
+                touchStartX: 0,
+                touchEndX: 0,
+                touchStartY: 0,
+                touchEndY: 0,
+
+                // Word Learning State
+                words: [
+                    // Extracted from the sample text - Needs to be CET4+ ideally
+                    { word: 'native', phonetic: '/ˈneɪtɪv/', definition: '本地的；天生的；土生植物', etymology: '来自拉丁语 nativus "天生的，自然的"', sentence: 'This is a truly AI Native browser.' },
+                    { word: 'browser', phonetic: '/ˈbraʊzər/', definition: '浏览器', etymology: '动词 browse + -er', sentence: 'You need an invitation code for the Dia browser.' },
+                    { word: 'invitation', phonetic: '/ˌɪnvɪˈteɪʃən/', definition: '邀请；请帖', etymology: '来自拉丁语 invitare "邀请"', sentence: 'Everyone should try to get an invitation code.' },
+                    { word: 'podcast', phonetic: '/ˈpɒdkɑːst/', definition: '播客', etymology: 'iPod + broadcast', sentence: 'I used NotebookLM for podcast summaries before.' },
+                    { word: '提炼', phonetic: '/tí liàn/', definition: 'to extract; refine', etymology: '中文词', sentence: '提炼所有故事 (Extract all stories).' }, // Added a Chinese example word for demo
+                    { word: 'encompass', phonetic: '/ɪnˈkʌmpəs/', definition: '包含；环绕', etymology: 'en- "使进入" + compass "范围"', sentence: 'Questions that encompass all the content.' },
+                     { word: 'default', phonetic: '/dɪˈfɔːlt/', definition: '默认；系统设定值', etymology: '来自古法语 defalte "缺点，缺少"', sentence: 'It\'s ad-free by default, amazing!' }
+                ],
+                currentWordIndex: 0,
+                wordCardFlipped: false,
+
+                // Reading State
+                showEnglish: true,
+                rawEnglishText: `Oh wow! Everyone should definitely try to get an invitation code for the Dia browser.\n\nIt's a truly AI Native browser.\n\nUse Case: Podcast summaries. I used NotebookLM before.\n\nThe webpage directly asks: "Propose 20 questions about this content, such that the AI's answers will encompass all the text of this podcast."\n\nFollow-up question: "Answer the first question." And it actually answered!\n\nAsked again: "Extract all the stories." It delivered instantly.\n\nAd-free by default, awesome!`,
+                rawChineseText: `我去！大家一定要想办法搞个Dia浏览器的邀请码。\n\n真正AI Native浏览器。\n\nUse Case：播客总结，以前用NotebookLM。\n\n网页直接问："针对这个内容提出20个问题，让AI回答后能涵盖这个播客文本的所有内容"\n\n追问："回答第一个问题"，真回答了！\n\n再问："提炼所有故事"，秒出。\n\n默认无广告，牛逼！`,
+                formattedEnglishText: '',
+                formattedChineseText: '',
+                highlightedWords: ['native', 'browser', 'invitation', 'podcast', 'encompass', 'default'], // Words to highlight
+                popupWord: '',
+                popupX: 0,
+                popupY: 0,
+
+                // Quiz State
+                questions: [
+                    {
+                        question: "What specific application is mentioned for the Dia browser?",
+                        options: ["Video editing", "Podcast summaries", "Code development", "Social media management"],
+                        correctAnswer: 1, // Index of the correct option
+                        explanation: "The text explicitly mentions 'Use Case: Podcast summaries' in relation to using a tool like NotebookLM previously, implying Dia browser is used for similar tasks or webpage interaction related to it."
+                    },
+                    {
+                        question: "What does the user seem impressed by regarding asking questions on the webpage?",
+                        options: ["The speed of the browser", "The number of questions allowed", "The AI's ability to answer directly and extract information", "The design of the user interface"],
+                        correctAnswer: 2,
+                        explanation: "The user expresses surprise ('真回答了！', '秒出') at the AI's capability to answer specific questions and extract stories based on the webpage content."
+                    },
+                    {
+                        question: "What is highlighted as a significant advantage of the Dia browser at the end?",
+                        options: ["It's very fast", "It has better AI", "It's free", "It's ad-free by default"],
+                        correctAnswer: 3,
+                        explanation: "The text concludes with '默认无广告，牛逼！' which translates to 'Ad-free by default, awesome!', pointing this out as a key benefit."
+                    },
+                    {
+                        question: "What term is used to describe the Dia browser's core technology?",
+                        options: ["Web 3.0", "AI Native", "Cloud-Based", "Open Source"],
+                        correctAnswer: 1,
+                        explanation: "The text explicitly states '真正AI Native浏览器' (Truly AI Native browser)."
+                    }
+                ],
+                currentQuestionIndex: 0,
+                userAnswers: {}, // { 0: selectedIndex, 1: selectedIndex, ... }
+                quizScore: 0,
+                quizCompleted: false,
+
+                // Achievement State
+                posterVisible: false,
+                selectedPosterStyle: '', // 'bold-modern', 'cyberpunk', etc.
+                posterData: { // Default values
+                     title: "Learning Report",
+                     quote: "The journey of a thousand miles begins with a single step."
+                 },
+                posterStyleClasses: { // Predefined classes for easier binding
+                     container: '', title: '', date: '', stats: '', quote: ''
+                 },
+
+                // --- METHODS ---
+
+                init() {
+                    this.questions.forEach((_, index) => {
+                        this.userAnswers[index] = null;
+                    });
+                    this.formatReadingText();
+                    this.readingMode = 'english'; // 设置默认阅读模式
+                    console.log("App initialized");
+                },
+
+                // Word Learning Methods
+                nextWord() {
+                    if (this.currentWordIndex < this.words.length - 1) {
+                        this.currentWordIndex++;
+                        this.wordCardFlipped = false; // Reset flip state
+                    }
+                },
+                prevWord() {
+                    if (this.currentWordIndex > 0) {
+                        this.currentWordIndex--;
+                        this.wordCardFlipped = false; // Reset flip state
+                    }
+                },
+                get currentWordData() {
+                     if (this.words.length === 0) return { word: '', phonetic: '', definition: '', etymology: '', sentence: '' }; // Handle empty case
+                    return this.words[this.currentWordIndex];
+                },
+
+                // Reading Methods
+                formatReadingText() {
+                    // Use Marked.js to convert Markdown to HTML
+                    const formatOptions = { breaks: true, gfm: true }; // Enable line breaks
+                    let htmlEn = marked.parse(this.rawEnglishText, formatOptions);
+                    let htmlZh = marked.parse(this.rawChineseText, formatOptions);
+
+                    // Add highlighting spans to English text
+                    this.highlightedWords.forEach(word => {
+                        // Use regex to wrap the word, case-insensitive, ensuring it's a whole word
+                        const regex = new RegExp(`\\b(${word})\\b`, 'gi');
+                         htmlEn = htmlEn.replace(regex, `<span class="highlighted-word" data-word="${word.toLowerCase()}">$1</span>`);
+                     });
+
+                     this.formattedEnglishText = htmlEn;
+                     this.formattedChineseText = htmlZh;
+                },
+                handleWordClick(event) {
+                    const target = event.target;
+                    if (target.classList.contains('highlighted-word')) {
+                        const word = target.dataset.word;
+                        const definition = this.getWordDefinition(word);
+                        if (definition) {
+                            this.popupWord = target.innerText; // Show the exact clicked word form
+                            // Position popup near the clicked word
+                            const rect = target.getBoundingClientRect();
+                            this.popupX = rect.left + window.scrollX + rect.width / 2;
+                            this.popupY = rect.top + window.scrollY;
+                        }
+                    } else {
+                        //this.popupWord = ''; // Hide popup if clicking elsewhere
+                    }
+                },
+                getWordDefinition(word) {
+                     const lowerCaseWord = word.toLowerCase();
+                    const foundWord = this.words.find(w => w.word.toLowerCase() === lowerCaseWord);
+                    return foundWord ? foundWord.definition : '暂无释义';
+                },
+
+                // Quiz Methods
+                get currentQuestionData() {
+                    if (this.questions.length === 0) return { question: '', options: [], correctAnswer: -1, explanation: '' };
+                    return this.questions[this.currentQuestionIndex];
+                },
+                selectAnswer(index) {
+                     if (this.userAnswers[this.currentQuestionIndex] === null) { // Only allow selection once
+                        this.userAnswers[this.currentQuestionIndex] = index;
+                        if (index === this.currentQuestionData.correctAnswer) {
+                           // Correct answer logic (if needed immediately)
+                        } else {
+                           // Incorrect answer logic
+                        }
+                    }
+                },
+                nextQuestion() {
+                    if (this.currentQuestionIndex < this.questions.length - 1) {
+                        this.currentQuestionIndex++;
+                    }
+                },
+                finishQuiz() {
+                     this.calculateScore();
+                     this.quizCompleted = true;
+                     // Optionally: scroll to results or trigger achievement module
+                     this.$nextTick(() => {
+                         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                         // this.currentModule = 'achievement'; // Or jump directly
+                     });
+                },
+                calculateScore() {
+                    let score = 0;
+                    this.questions.forEach((question, index) => {
+                        if (this.userAnswers[index] === question.correctAnswer) {
+                            score++;
+                        }
+                    });
+                    this.quizScore = score;
+                },
+                 retakeQuiz() {
+                     this.currentQuestionIndex = 0;
+                     this.quizCompleted = false;
+                     this.quizScore = 0;
+                     // Reset answers
+                     this.questions.forEach((_, index) => {
+                         this.userAnswers[index] = null;
+                     });
+                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                 },
+                 getQuizFeedback() {
+                    const percentage = (this.quizScore / this.questions.length) * 100;
+                    if (percentage === 100) return "完美！你完全掌握了内容。";
+                    if (percentage >= 75) return "很棒！对内容的理解非常到位。";
+                    if (percentage >= 50) return "不错，还有提升空间，再接再厉！";
+                    return "需要多加练习哦，重新测试或回顾原文吧！";
+                 },
+
+                // Achievement Methods
+                showPoster(style) {
+                    this.selectedPosterStyle = style;
+                    this.setPosterStyleData(style); // Set text/styles based on theme
+                    this.posterVisible = true;
+                },
+                 setPosterStyleData(style) {
+                    const quotes = {
+                        'bold-modern': "Push beyond your limits, reach for the stars.",
+                        'cyberpunk': "Knowledge is power, code is freedom.",
+                        'elegant-vintage': "Education is not preparation for life; education is life itself.",
+                        'neo-futurism': "The future belongs to those who learn more skills and combine them in creative ways."
+                    };
+                    
+                    const difficultWords = this.getDifficultWords();
+                    
+                    const posterContent = document.querySelector('.poster-content');
+                    if (posterContent) {
+                        posterContent.innerHTML = `
+                            <div class="h-full flex flex-col">
+                                <div class="poster-header">
+                                    <h2 class="text-2xl font-bold mb-2">学习报告</h2>
+                                    <p class="text-sm opacity-80">${this.currentDate}</p>
+                                </div>
+                                
+                                <div class="poster-stats">
+                                    <div class="stat-card">
+                                        <div class="stat-number">${this.words.length}</div>
+                                        <div class="stat-label">今日单词</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${this.quizScore}/${this.questions.length}</div>
+                                        <div class="stat-label">测验得分</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="poster-words">
+                                    <h3 class="text-base font-semibold mb-3">今日挑战词汇</h3>
+                                    ${difficultWords.map(word => `
+                                        <div class="word-card">
+                                            <div class="word-main">
+                                                <div class="word-text">${word.word}</div>
+                                                <div class="word-phonetic">${word.phonetic}</div>
+                                            </div>
+                                            <div class="word-definition">${word.definition}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                
+                                <div class="poster-footer mt-auto">
+                                    <p class="poster-quote text-center text-sm mb-3">${quotes[style]}</p>
+                                    <div class="poster-branding text-center opacity-60">乔木英语</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                 },
+
+                // Swipe Handling
+                handleTouchStart(event) {
+                    this.touchStartX = event.touches[0].clientX;
+                    this.touchStartY = event.touches[0].clientY;
+                },
+                handleTouchMove(event) {
+                    this.touchEndX = event.touches[0].clientX;
+                    this.touchEndY = event.touches[0].clientY;
+                },
+                 handleTouchEnd(context) { // context = 'words' or 'reading'
+                    const deltaX = this.touchEndX - this.touchStartX;
+                    const deltaY = this.touchEndY - this.touchStartY;
+
+                    // Only register as swipe if horizontal movement is significant and vertical is not
+                    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 50 && this.touchEndX !== 0) {
+                        if (deltaX < -50) { // Swipe Left (Next)
+                            if (context === 'words') {
+                                if (this.currentWordIndex < this.words.length - 1) {
+                                    this.nextWord();
+                                } else {
+                                     // Maybe show a small message "Last word, go to reading?" or automatically switch
+                                     this.currentModule = 'reading';
+                                }
+                            } else if (context === 'reading' && !this.quizCompleted) {
+                                // Swipe left during reading could potentially navigate quiz questions if quiz is active?
+                                // Or just switch language? Let's keep it simple: No swipe action during reading text itself for now.
+                                // If quiz is active and an answer is selected:
+                                if (this.userAnswers[this.currentQuestionIndex] !== null && this.currentQuestionIndex < this.questions.length - 1) {
+                                    this.nextQuestion();
+                                } else if (this.userAnswers[this.currentQuestionIndex] !== null && this.currentQuestionIndex === this.questions.length - 1){
+                                    this.finishQuiz();
+                                }
+                            }
+                        } else if (deltaX > 50) { // Swipe Right (Previous)
+                            if (context === 'words') {
+                                this.prevWord();
+                            } else if (context === 'reading' && !this.quizCompleted) {
+                                // Swipe right during reading/quiz: Go to previous question?
+                                if (this.currentQuestionIndex > 0) {
+                                    this.currentQuestionIndex--;
+                                     // Maybe clear the answer for the previous question if re-visiting?
+                                    // this.userAnswers[this.currentQuestionIndex] = null; // Uncomment if needed
+                                } else {
+                                    // At first question, maybe go back to words?
+                                    // this.currentModule = 'words';
+                                }
+                            }
+                        }
+                    }
+                    // Reset touch coordinates
+                    this.touchStartX = 0;
+                    this.touchEndX = 0;
+                    this.touchStartY = 0;
+                    this.touchEndY = 0;
+                },
+
+                // 获取最难的5个单词
+                getDifficultWords() {
+                    // 根据单词长度和定义长度综合评分
+                    return this.words
+                        .map(word => ({
+                            ...word,
+                            difficulty: word.word.length + word.definition.length
+                        }))
+                        .sort((a, b) => b.difficulty - a.difficulty)
+                        .slice(0, 3); // 只返回最难的3个单词
+                },
+
+                // 获取双语段落对照
+                getBilingualParagraphs() {
+                    const englishParagraphs = this.rawEnglishText.split('\n\n');
+                    const chineseParagraphs = this.rawChineseText.split('\n\n');
+                    return englishParagraphs.map((english, index) => ({
+                        english: this.formatParagraphWithHighlights(english),
+                        chinese: chineseParagraphs[index] || ''
+                    }));
+                },
+                
+                // 格式化段落并添加高亮
+                formatParagraphWithHighlights(text) {
+                    let formatted = text;
+                    this.highlightedWords.forEach(word => {
+                        const regex = new RegExp(`\\b(${word})\\b`, 'gi');
+                        formatted = formatted.replace(regex, `<span class="highlighted-word" data-word="${word.toLowerCase()}">$1</span>`);
+                    });
+                    return formatted;
+                },
+            }
+        }
+    </script>
+</body>
+</html>
